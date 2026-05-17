@@ -1,0 +1,122 @@
+{
+  "entities": {
+    "author": {
+      "title": "Author",
+      "description": "Information about a book author",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The full name of the author" },
+        "bio": { "type": "string", "description": "A brief biography of the author" },
+        "photoUrl": { "type": "string", "format": "uri", "description": "Profile picture of the author" }
+      },
+      "required": ["name", "bio"]
+    },
+    "book": {
+      "title": "Book",
+      "description": "A book object in the library",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "The title of the book" },
+        "authorId": { "type": "string", "description": "The ID of the author in the authors collection" },
+        "authorName": { "type": "string", "description": "Denormalized author name for quick display" },
+        "pdfUrl": { "type": "string", "format": "uri", "description": "URL to the PDF file in storage" },
+        "coverUrl": { "type": "string", "format": "uri", "description": "URL to the book cover image" },
+        "description": { "type": "string", "description": "A short summary of the book" },
+        "category": { "type": "string", "description": "Primary genre or category" },
+        "genres": { "type": "array", "items": { "type": "string" }, "description": "List of AI-suggested or manual genres" },
+        "averageRating": { "type": "number", "description": "Floating point average of all scores" },
+        "reviewsCount": { "type": "integer", "description": "Total number of ratings" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of upload" }
+      },
+      "required": ["title", "authorId", "authorName", "pdfUrl"]
+    },
+    "rating": {
+      "title": "Rating",
+      "description": "A single user's score for a book",
+      "type": "object",
+      "properties": {
+        "score": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "userId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["score", "userId", "timestamp"]
+    },
+    "admin": {
+      "title": "Admin",
+      "description": "Admin user configuration",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin"] }
+      },
+      "required": ["uid", "role"]
+    },
+    "bookmark": {
+      "title": "Bookmark",
+      "description": "A user's saved book",
+      "type": "object",
+      "properties": {
+        "bookId": { "type": "string" },
+        "userId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["bookId", "userId", "timestamp"]
+    },
+    "progress": {
+      "title": "Reading Progress",
+      "description": "User's progress in a book",
+      "type": "object",
+      "properties": {
+        "bookId": { "type": "string" },
+        "userId": { "type": "string" },
+        "percent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "lastRead": { "type": "string", "format": "date-time" }
+      },
+      "required": ["bookId", "userId", "percent", "lastRead"]
+    },
+    "user_stats": {
+      "title": "User Stats",
+      "description": "Gamification data for a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "xp": { "type": "integer", "default": 0 },
+        "level": { "type": "string", "enum": ["Substitute", "Starter", "Captain"] },
+        "currentStreak": { "type": "integer", "default": 0 },
+        "lastLogin": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "xp", "level", "currentStreak", "lastLogin", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/authors/{authorId}": {
+      "schema": "author",
+      "description": "A collection of authors"
+    },
+    "/books/{bookId}": {
+      "schema": "book",
+      "description": "A collection of library books"
+    },
+    "/books/{bookId}/ratings/{userId}": {
+      "schema": "rating",
+      "description": "Individual ratings for a book"
+    },
+    "/admins/{adminId}": {
+      "schema": "admin",
+      "description": "Authorized admin users"
+    },
+    "/users/{userId}/bookmarks/{bookId}": {
+      "schema": "bookmark",
+      "description": "User's bookmarked books"
+    },
+    "/users/{userId}/progress/{bookId}": {
+      "schema": "progress",
+      "description": "User's reading progress per book"
+    },
+    "/users/{userId}/stats/main": {
+      "schema": "user_stats",
+      "description": "Main gamification stats for a user"
+    }
+  }
+}

@@ -1,0 +1,147 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read: if true; // Anyone can see the books
+allow write: if request.auth != null; // Only admin (logged in) can add/delete
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerified() && request.auth.token.email == 'soumitdbpc@gmail.com';
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Authors ---
+    match /authors/{authorId} {
+      allow get: if isVerified();
+      allow list: if isVerified();
+      
+      allow create: if isAdmin() && isValidId(authorId) && isValidAuthor(incoming());
+      allow update: if isAdmin() && isValidAuthor(incoming());
+      allow delete: if isAdmin();
+    }
+
+    function isValidAuthor(data) {
+      return data.keys().hasAll(['name', 'bio']) 
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 200
+        && data.bio is string && data.bio.size() > 0 && data.bio.size() <= 2000
+        && (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 1000));
+    }
+
+    // --- Books ---
+    match /books/{bookId} {
+      allow get: if isVerified();
+      allow list: if isVerified();
+      
+      allow create: if isAdmin() && isValidId(bookId) && isValidBook(incoming());
+      allow update: if (isAdmin() || isVerified()) && isValidBook(incoming());
+      allow delete: if isAdmin();
+
+      match /ratings/{userId} {
+        allow get: if isVerified();
+        allow list: if isVerified();
+        allow create, update: if isVerified() && request.auth.uid == userId && isValidRating(incoming());
+        allow delete: if isVerified() && request.auth.uid == userId;
+      }
+    }
+
+    function isValidRating(data) {
+      return data.keys().hasAll(['score', 'userId', 'timestamp'])
+        && data.score is int && data.score >= 1 && data.score <= 5
+        && data.userId == request.auth.uid
+        && data.timestamp == request.time;
+    }
+
+    function isValidBook(data) {
+      return data.keys().hasAll(['title', 'authorId', 'authorName', 'pdfUrl', 'createdAt'])
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 600
+        && data.authorId is string && data.authorId.size() > 0
+        && data.authorName is string && data.authorName.size() > 0
+        && data.pdfUrl is string && data.pdfUrl.size() > 0 && data.pdfUrl.size() <= 2000
+        && data.createdAt == request.time
+        && (!('genres' in data) || (data.genres is list && data.genres.size() <= 10))
+        && (!('averageRating' in data) || (data.averageRating is float || data.averageRating is int))
+        && (!('reviewsCount' in data) || (data.reviewsCount is int))
+        && (!('coverUrl' in data) || (data.coverUrl is string && data.coverUrl.size() <= 2000))
+        && (!('description' in data) || (data.description is string && data.description.size() <= 8000))
+        && (!('category' in data) || (data.category is string && data.category.size() <= 100));
+    }
+
+    // --- User Data ---
+    match /users/{userId} {
+      match /bookmarks/{bookId} {
+        allow read: if isVerified() && request.auth.uid == userId;
+        allow create: if isVerified() && request.auth.uid == userId && isValidBookmark(incoming());
+        allow delete: if isVerified() && request.auth.uid == userId;
+      }
+      
+      match /progress/{bookId} {
+        allow read: if isVerified() && request.auth.uid == userId;
+        allow create, update: if isVerified() && request.auth.uid == userId && isValidProgress(incoming());
+        allow delete: if isVerified() && request.auth.uid == userId;
+      }
+
+      match /stats/main {
+        allow read: if isVerified() && request.auth.uid == userId;
+        allow create, update: if isVerified() && request.auth.uid == userId && isValidStats(incoming());
+      }
+    }
+
+    function isValidStats(data) {
+      return data.keys().hasAll(['userId', 'xp', 'level', 'currentStreak', 'lastLogin', 'updatedAt'])
+        && data.userId == request.auth.uid
+        && data.xp is int && data.xp >= 0
+        && data.level is string && data.level in ['Substitute', 'Starter', 'Captain']
+        && data.currentStreak is int && data.currentStreak >= 0
+        && data.lastLogin is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidProgress(data) {
+      return data.keys().hasAll(['bookId', 'userId', 'percent', 'lastRead'])
+        && data.bookId is string && data.bookId.size() > 0
+        && data.userId == request.auth.uid
+        && (data.percent is float || data.percent is int) && data.percent >= 0 && data.percent <= 100
+        && data.lastRead == request.time;
+    }
+
+    function isValidBookmark(data) {
+      return data.keys().hasAll(['bookId', 'userId', 'timestamp'])
+        && data.bookId is string && data.bookId.size() > 0
+        && data.userId == request.auth.uid
+        && data.timestamp == request.time;
+    }
+
+    // --- Admins ---
+    match /admins/{adminId} {
+      allow get: if isVerified() && (request.auth.uid == adminId || isAdmin());
+      // No listing admins unless you're already one (or handle via specific query)
+      allow list: if isAdmin();
+      
+      // Bootstrap logic: initially the system admin can add themselves or others? 
+      // For this app, we'll assume the admin collection is pre-populated or managed via Console.
+      allow write: if false; 
+    }
+  }
+}
