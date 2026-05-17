@@ -17,7 +17,7 @@ export function getAi() {
   }
 
   try {
-    genAI = new GoogleGenAI(apiKey);
+    genAI = new GoogleGenAI({ apiKey });
     return genAI;
   } catch (err) {
     console.error("Failed to initialize GoogleGenAI:", err);
@@ -26,7 +26,7 @@ export function getAi() {
 }
 
 export const MODELS = {
-    FLASH: "gemini-3-flash-preview",
-    PRO: "gemini-3.1-pro-preview",
-    LITE: "gemini-3.1-flash-lite-preview"
+    FLASH: "gemini-2.5-flash",
+    PRO: "gemini-2.5-pro",
+    LITE: "gemini-2.0-flash-lite"
 };
