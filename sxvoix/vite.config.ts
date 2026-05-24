@@ -19,6 +19,9 @@ export default defineConfig(({ mode }) => {
     // Vite handles VITE_ variables automatically!
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
+      proxy: {
+        '/api': 'http://localhost:3001',
+      },
     },
   };
 });

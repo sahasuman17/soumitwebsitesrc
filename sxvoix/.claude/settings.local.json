@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"e:\\\\Soumit Saha\\\\soumitwebsitesrc\\\\sxvoix\" -Force)",
+      "Bash(Select-Object Name, FullName)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(node -e \"require\\('playwright'\\)\")",
+      "Bash(where chromium *)",
+      "Bash(where chromium-browser *)",
+      "Bash(where \"chrome.exe\")",
+      "Read(//c/Program Files/Google/Chrome/Application/**)",
+      "Bash(npm list *)",
+      "Bash(npx playwright *)",
+      "Bash(node -e \"const p=require\\('playwright'\\); console.log\\(p.version || 'found'\\);\")",
+      "Bash(node -e \"console.log\\(Object.keys\\(require\\('playwright'\\)\\)\\)\")",
+      "Bash(vercel --version)",
+      "Bash(npx tsx *)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(node -e ' *)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":3000\")",
+      "PowerShell(Invoke-WebRequest -Uri \"https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf\" -OutFile \"e:\\\\Soumit Saha\\\\soumitwebsitesrc\\\\sxvoix\\\\sample.pdf\"; Write-Host \"Downloaded: $\\(\\(Get-Item 'e:\\\\Soumit Saha\\\\soumitwebsitesrc\\\\sxvoix\\\\sample.pdf'\\).Length\\) bytes\")"
+    ]
+  }
+}
