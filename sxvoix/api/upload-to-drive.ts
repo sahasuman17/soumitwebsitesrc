@@ -3,39 +3,29 @@ import { google } from 'googleapis';
 import { Readable } from 'stream';
 
 export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '100mb',
-    },
-  },
+  api: { bodyParser: { sizeLimit: '100mb' } },
 };
 
+function getDriveClient() {
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    'https://developers.google.com/oauthplayground'
+  );
+  oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+  return google.drive({ version: 'v3', auth: oauth2Client });
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { fileBase64, fileName } = req.body as { fileBase64: string; fileName: string };
-
   if (!fileBase64 || !fileName) {
     return res.status(400).json({ error: 'fileBase64 and fileName are required' });
   }
 
-  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  const rawKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
-  if (!email || !rawKey) {
-    return res.status(500).json({ error: 'Google service account credentials are not configured' });
-  }
-
   try {
-    const auth = new google.auth.JWT({
-      email,
-      key: rawKey.replace(/\\n/g, '\n'),
-      scopes: ['https://www.googleapis.com/auth/drive.file'],
-    });
-
-    const drive = google.drive({ version: 'v3', auth });
-
+    const drive = getDriveClient();
     const buffer = Buffer.from(fileBase64, 'base64');
     const stream = Readable.from(buffer);
 
@@ -57,11 +47,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     return res.status(200).json({
-      fileId,
-      pdfUrl: `https://drive.google.com/uc?export=download&id=${fileId}`,
+      pdfUrl: `https://drive.google.com/file/d/${fileId}/view?usp=sharing`,
     });
   } catch (err: any) {
-    console.error('Google Drive upload error:', err);
+    console.error('Drive upload error:', err.message);
     return res.status(500).json({ error: err.message ?? 'Upload failed' });
   }
 }

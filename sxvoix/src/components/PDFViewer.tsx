@@ -9,6 +9,25 @@ import { useAuth } from '../context/AuthContext';
 import { useGamification } from '../context/GamificationContext';
 import { useAcademicFocus } from '../hooks/useAcademicFocus';
 
+function extractDriveId(url: string): string | null {
+  const fileMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (fileMatch) return fileMatch[1];
+  const ucMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (ucMatch) return ucMatch[1];
+  return null;
+}
+
+function getDriveEmbedUrl(url: string): string {
+  const id = extractDriveId(url);
+  if (id) return `https://drive.google.com/file/d/${id}/preview`;
+  return `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+}
+
+function getDriveDownloadUrl(url: string): string {
+  const id = extractDriveId(url);
+  return id ? `https://drive.google.com/uc?export=download&id=${id}` : url;
+}
+
 interface PDFViewerProps {
   book: Book | null;
   onClose: () => void;
@@ -179,7 +198,7 @@ export default function PDFViewer({ book, onClose }: PDFViewerProps) {
   };
 
   const handleDownload = () => {
-    window.open(book.pdfUrl, '_blank');
+    window.open(getDriveDownloadUrl(book.pdfUrl), '_blank');
   };
 
   return (
@@ -352,9 +371,10 @@ export default function PDFViewer({ book, onClose }: PDFViewerProps) {
           <div className="flex-1 bg-zinc-900/50 flex items-center justify-center">
             {user ? (
               <iframe
-                src={`${book.pdfUrl}#toolbar=0`}
+                src={getDriveEmbedUrl(book.pdfUrl)}
                 className="w-full h-full border-none"
                 title={book.title}
+                allow="autoplay"
               />
             ) : (
                 <div className="text-center space-y-4 p-8">
